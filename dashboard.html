@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WQ Brain · Alpha Desk</title>
+<style>
+:root{
+  --bg:#0b0e11; --panel:#181a20; --panel2:#1e2329; --line:#2b3139; --line2:#363c45;
+  --text:#eaecef; --muted:#848e9c; --dim:#5e6673;
+  --up:#0ecb81; --dn:#f6465d; --gold:#fcd535; --gold2:#f0b90b; --blue:#4a9dff;
+  --font:-apple-system,"SF Pro Display","SF Pro Text",BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --num:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}
+button{font-family:inherit}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+
+/* ── Nav ─────────────────────────────────────── */
+.nav{height:64px;display:flex;align-items:center;gap:32px;padding:0 24px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+.brand{font-size:20px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+.brand i{width:28px;height:28px;border-radius:7px;background:var(--gold);display:inline-block;position:relative}
+.brand i::after{content:"";position:absolute;inset:7px;border:3px solid #0b0e11;border-right:0;border-bottom:0;transform:rotate(45deg)}
+.tabs{display:flex;gap:4px}
+.tab{padding:8px 14px;border-radius:6px;color:var(--muted);font-size:15px;font-weight:500;cursor:pointer;border:none;background:none}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--text);background:var(--panel2)}
+.nav .right{margin-left:auto;display:flex;align-items:center;gap:18px;color:var(--muted);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.dot.live{background:var(--up);box-shadow:0 0 0 4px rgba(14,203,129,.18)}
+.clock{font-family:var(--num);font-size:14px;color:var(--text)}
+
+/* ── Ticker strip ───────────────────────────── */
+.strip{height:40px;border-bottom:1px solid var(--line);background:var(--bg);overflow:hidden;white-space:nowrap;display:flex;align-items:center}
+.strip-inner{display:inline-flex;animation:scroll 60s linear infinite}
+.strip span{display:inline-flex;gap:8px;padding:0 22px;font-size:13px;color:var(--muted)}
+.strip b{color:var(--text);font-weight:500;font-family:var(--num)}
+@keyframes scroll{to{transform:translateX(-50%)}}
+.g{color:var(--up)}.r{color:var(--dn)}.y{color:var(--gold)}
+
+/* ── Header stats (Binance market header) ────── */
+.head{display:flex;align-items:center;gap:40px;padding:22px 24px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.head .pair{min-width:260px}
+.head .pair .name{font-size:14px;color:var(--muted);margin-bottom:4px}
+.head .pair .big{font-size:36px;font-weight:600;letter-spacing:-1px;font-family:var(--num)}
+.head .pair .sub{font-size:14px;color:var(--muted);margin-top:2px}
+.kpi{min-width:120px}
+.kpi .l{font-size:13px;color:var(--muted);margin-bottom:4px}
+.kpi .v{font-size:20px;font-weight:600;font-family:var(--num);letter-spacing:-.3px}
+.head .src{margin-left:auto;display:flex;gap:10px;align-items:center}
+select,input[type=text]{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 12px;border-radius:6px;font-size:14px;font-family:inherit;outline:none}
+select:focus,input:focus{border-color:var(--gold2)}
+.btn{padding:9px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:14px;font-weight:500;cursor:pointer}
+.btn:hover{border-color:var(--line2);background:#252a31}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#0b0e11;font-weight:600}
+.btn.gold:hover{background:var(--gold2)}
+.btn.sm{padding:6px 11px;font-size:13px}
+
+/* ── Layout ─────────────────────────────────── */
+.wrap{padding:16px 24px 40px;display:grid;grid-template-columns:1fr 340px;gap:16px;max-width:1800px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.card h2{font-size:16px;font-weight:600;padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.card h2 small{font-weight:400;color:var(--muted);font-size:13px}
+.card h2 .sp{margin-left:auto;display:flex;gap:8px;align-items:center}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.view{display:none}.view.on{display:contents}
+
+/* ── Table ──────────────────────────────────── */
+.tw{overflow:auto;max-height:620px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:500;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;font-size:13px}
+th:hover{color:var(--text)}
+td{padding:11px 14px;border-bottom:1px solid #22262d;white-space:nowrap;font-family:var(--num);font-size:14px}
+tr:hover td{background:var(--panel2)}
+td.code{font-family:var(--num);font-size:13px;color:var(--muted);max-width:420px;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+td.code:hover{color:var(--gold)}
+.chip{display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;font-weight:600;font-family:var(--font)}
+.chip.ok{background:rgba(14,203,129,.14);color:var(--up)}
+.chip.bad{background:rgba(246,70,93,.14);color:var(--dn)}
+.chip.mid{background:rgba(252,213,53,.14);color:var(--gold)}
+.chip.na{background:var(--panel2);color:var(--muted)}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:15px}
+.empty b{display:block;color:var(--text);font-size:18px;margin-bottom:8px;font-weight:600}
+.drop{margin:18px;border:1px dashed var(--line2);border-radius:10px;padding:34px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.over{border-color:var(--gold);background:rgba(252,213,53,.05)}
+
+/* ── Order-book style leaderboard ───────────── */
+.book{padding:6px 0}
+.row{display:grid;grid-template-columns:34px 1fr 90px 70px;gap:10px;align-items:center;padding:9px 18px;position:relative;cursor:pointer;font-size:14px}
+.row:hover{background:var(--panel2)}
+.row .bar{position:absolute;right:0;top:0;bottom:0;background:rgba(14,203,129,.10);z-index:0}
+.row .bar.neg{background:rgba(246,70,93,.10)}
+.row>*{position:relative;z-index:1}
+.row .n{color:var(--dim);font-family:var(--num)}
+.row .c{font-family:var(--num);font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .s{font-family:var(--num);text-align:right;font-weight:600}
+.row .f{font-family:var(--num);text-align:right;color:var(--muted);font-size:13px}
+.bookhead{display:grid;grid-template-columns:34px 1fr 90px 70px;gap:10px;padding:8px 18px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.bookhead span:nth-child(3),.bookhead span:nth-child(4){text-align:right}
+
+/* ── Runs list ──────────────────────────────── */
+.runs{max-height:300px;overflow:auto}
+.run{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;font-size:14px;border-bottom:1px solid #22262d}
+.run:hover{background:var(--panel2)}
+.run.on{background:var(--panel2);box-shadow:inset 3px 0 0 var(--gold)}
+.run .nm{font-family:var(--num);font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.run .t{color:var(--muted);font-size:12px}
+.run .k{font-size:11px;padding:2px 6px;border-radius:4px;background:var(--panel2);color:var(--muted);font-weight:600}
+.run .k.csv{color:var(--gold)}
+
+/* ── Chart ──────────────────────────────────── */
+canvas{display:block;width:100%}
+.chart-wrap{padding:12px 18px 6px}
+.legend{display:flex;gap:18px;padding:0 18px 12px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* ── Log ────────────────────────────────────── */
+.log{height:420px;overflow:auto;padding:12px 18px;font-family:var(--num);font-size:13px;line-height:1.7;background:#0e1115}
+.ll{display:flex;gap:14px}
+.ll .ts{color:var(--dim);flex-shrink:0}
+.ll .w{color:var(--blue);flex-shrink:0;min-width:42px}
+.ll .m{color:#b7bdc6;white-space:pre-wrap;word-break:break-all}
+.ll .m.ok{color:var(--up)}.ll .m.err{color:var(--dn)}.ll .m.warn{color:var(--gold)}
+
+/* ── Library ────────────────────────────────── */
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px;padding:18px}
+.alpha{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:18px}
+.alpha .top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.alpha .top b{font-size:17px}
+.alpha .tag{margin-left:auto;font-size:12px;padding:3px 9px;border-radius:5px;background:var(--panel);color:var(--muted);font-weight:600}
+.alpha .tag.live{color:var(--up);background:rgba(14,203,129,.14)}
+.alpha p{color:var(--muted);font-size:14px;margin-bottom:12px}
+.expr{background:#0e1115;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-family:var(--num);font-size:13px;color:var(--gold);line-height:1.6;word-break:break-all;user-select:all;margin-bottom:12px}
+.set{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted);margin-bottom:14px}
+.set b{color:var(--text);font-weight:500;font-family:var(--num)}
+.ls{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:13px;color:var(--muted);margin-bottom:12px}
+
+/* ── Modal ──────────────────────────────────── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100}
+.ov.on{display:flex}
+.md{background:var(--panel);border:1px solid var(--line2);border-radius:12px;width:min(760px,94vw);padding:24px;max-height:88vh;overflow:auto}
+.md h3{font-size:20px;margin-bottom:16px;display:flex;align-items:center}
+.md h3 button{margin-left:auto;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.kv .l{font-size:12px;color:var(--muted)}.kv .v{font-size:17px;font-family:var(--num);font-weight:600}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line2);padding:10px 18px;border-radius:8px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:200}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+@media(max-width:1100px){.wrap{grid-template-columns:1fr}.head{gap:24px}}
+@media(max-width:700px){.nav{gap:14px;padding:0 14px}.tab{padding:8px 9px;font-size:14px}.wrap{padding:12px}.head{padding:16px}.head .pair .big{font-size:30px}.lib{grid-template-columns:1fr;padding:12px}}
+.site-footer{text-align:center;color:var(--muted);border-top:1px solid var(--line);padding:20px 12px;font-size:13px;margin-top:36px}
+.site-footer span{color:var(--dn)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="brand"><i></i>WQ Brain</div>
+  <nav class="tabs">
+    <button class="tab on" data-v="sim">Simulations</button>
+    <button class="tab" data-v="scrape">Scraped</button>
+    <button class="tab" data-v="logs">Logs</button>
+    <button class="tab" data-v="lib">Library</button>
+  </nav>
+  <div class="right">
+    <span class="pill"><span class="dot" id="srcDot"></span><span id="srcTxt">Local files</span></span>
+    <span class="clock" id="clock"></span>
+  </div>
+</header>
+
+<div class="strip"><div class="strip-inner" id="strip"></div></div>
+
+<section class="head">
+  <div class="pair">
+    <div class="name" id="runName">No run loaded</div>
+    <div class="big" id="bigSharpe">—</div>
+    <div class="sub" id="bigSub">Best Sharpe this run</div>
+  </div>
+  <div class="kpi"><div class="l">Simulated</div><div class="v" id="kTotal">0</div></div>
+  <div class="kpi"><div class="l">Passed</div><div class="v g" id="kPass">0</div></div>
+  <div class="kpi"><div class="l">Avg Sharpe</div><div class="v" id="kSharpe">—</div></div>
+  <div class="kpi"><div class="l">Avg Fitness</div><div class="v" id="kFit">—</div></div>
+  <div class="kpi"><div class="l">Avg Turnover</div><div class="v" id="kTurn">—</div></div>
+  <div class="src">
+    <input type="text" id="q" placeholder="Search expression" style="width:220px" oninput="render()">
+    <select id="fNeut" onchange="render()"><option value="">All neutralization</option><option>SUBINDUSTRY</option><option>INDUSTRY</option><option>SECTOR</option><option>MARKET</option><option>NONE</option></select>
+    <select id="fPass" onchange="render()"><option value="">All results</option><option value="pass">Passed</option><option value="fail">Failed</option></select>
+    <button class="btn gold" onclick="$('file').click()">Open file</button>
+    <input type="file" id="file" multiple accept=".csv,.log" hidden onchange="onFiles(this.files)">
+  </div>
+</section>
+
+<main class="wrap">
+
+  <!-- SIM -->
+  <div class="view on" id="v-sim">
+    <div class="col">
+      <div class="card">
+        <h2>Sharpe by alpha <small>simulation order · green Sharpe ≥ 1.25</small>
+          <span class="sp"><span class="pill"><span id="chartN">0</span> alphas</span></span></h2>
+        <div class="chart-wrap"><canvas id="chart" height="190"></canvas></div>
+        <div class="legend"><span><i style="background:var(--up)"></i>Sharpe ≥ 1.25</span><span><i style="background:var(--dn)"></i>Below</span><span><i style="background:var(--gold)"></i>Fitness</span></div>
+      </div>
+      <div class="card">
+        <h2>Simulation results <small id="tblInfo"></small>
+          <span class="sp"><button class="btn sm" onclick="exportCSV()">Export</button><button class="btn sm" onclick="clearAll()">Clear</button></span></h2>
+        <div id="dropWrap"><div class="drop" id="drop"><b style="display:block;color:var(--text);font-size:16px;margin-bottom:6px">Drop a data/api_*.csv or a .log here</b>Or run <code>python serve.py</code> and the runs load themselves.</div></div>
+        <div class="tw"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h2>Leaderboard <small>by Sharpe</small></h2>
+        <div class="bookhead"><span>#</span><span>Expression</span><span>Sharpe</span><span>Fit</span></div>
+        <div class="book" id="book"><div class="empty">Nothing yet</div></div>
+      </div>
+      <div class="card">
+        <h2>Runs <small id="runsInfo"></small><span class="sp"><button class="btn sm" onclick="pollRuns(true)">Refresh</button></span></h2>
+        <div class="runs" id="runs"><div class="empty" style="padding:28px">Start <code>serve.py</code> to list data/</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRAPE -->
+  <div class="view" id="v-scrape">
+    <div class="col" style="grid-column:1/-1">
+      <div class="card">
+        <h2>Scraped alphas <small>passing &amp; unsubmitted, from scrape_alphas.py</small>
+          <span class="sp"><button class="btn sm" onclick="$('file').click()">Open scrape CSV</button></span></h2>
+        <div class="tw"><table id="stbl"><thead></thead><tbody></tbody></table></div>
+        <div class="empty" id="sEmpty"><b>No scrape loaded</b>Run <code>python scrape_alphas.py</code>, then pick the file from Runs or open it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="view" id="v-logs">
+    <div class="col" style="grid-column:1/-1">
+      <div class="card">
+        <h2>Log <small id="logName">none</small>
+          <span class="sp"><input type="text" id="lq" placeholder="Filter" oninput="renderLog()" style="width:180px;padding:6px 10px">
+          <button class="btn sm" id="follow" onclick="toggleFollow()">Following</button></span></h2>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIB -->
+  <div class="view" id="v-lib">
+    <div class="col" style="grid-column:1/-1">
+      <div class="card"><h2>Alpha library <small>example research templates</small></h2><div class="lib" id="lib"></div></div>
+    </div>
+  </div>
+</main>
+<footer class="site-footer">Made with <span aria-label="love">♥</span> by Joy Njoroge</footer>
+
+<div class="ov" id="ov" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="md">
+    <h3 id="mTitle">Alpha<button onclick="$('ov').classList.remove('on')">×</button></h3>
+    <div class="expr" id="mExpr"></div>
+    <div class="kv" id="mKv"></div>
+    <a class="btn gold" id="mLink" target="_blank">Open on Brain</a>
+    <button class="btn" onclick="copy($('mExpr').textContent)">Copy expression</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const n2=(v,d=2)=>(v===''||v==null||isNaN(+v))?'—':(+v).toFixed(d);
+
+/* clock + strip */
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})},1000);
+const T=[['SPY',499.23,1.2],['QQQ',432.10,-0.4],['NVDA',887.55,3.1],['AAPL',182.90,0.8],['TSLA',241.30,-2.3],['MSFT',414.75,0.6],['AMZN',185.22,1.5],['META',512.80,0.2],['JPM',198.55,0.9],['BRK.B',368.44,-0.1],['GS',431.12,1.1],['XLF',41.02,0.4]];
+const s=T.map(([a,b,c])=>`<span>${a}<b>${b.toFixed(2)}</b><em class="${c>=0?'g':'r'}" style="font-style:normal">${c>=0?'+':''}${c}%</em></span>`).join('');
+$('strip').innerHTML=s+s;
+
+/* tabs */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t.dataset.v));
+});
+
+/* state */
+let rows=[],view=[],sortK=null,sortD=-1,scrape=[],logLines=[],follow=true,served=false,currentRun='';
+
+/* csv */
+function parseCSV(t){
+  const out=[];let row=[],cell='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"')q=true; else if(c===','){row.push(cell);cell='';}
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&t[i+1]==='\n')i++; row.push(cell);out.push(row);row=[];cell=''; }
+    else cell+=c; }
+  if(cell||row.length){row.push(cell);out.push(row);}
+  const h=out.shift()||[];return out.filter(r=>r.length>1).map(r=>Object.fromEntries(h.map((k,i)=>[k.trim(),(r[i]||'').trim()])));
+}
+
+/* loading */
+function onFiles(fl){[...fl].forEach(f=>{const r=new FileReader();r.onload=e=>ingest(f.name,e.target.result);r.readAsText(f);});$('file').value='';}
+function ingest(name,text){
+  if(name.endsWith('.log')){logLines=text.split('\n');$('logName').textContent=name;renderLog();go('logs');toast(name);return;}
+  const d=parseCSV(text);
+  if(d.length&&'alpha'in d[0]){scrape=d;renderScrape();go('scrape');}
+  else{rows=d;currentRun=name;$('runName').textContent=name;$('dropWrap').style.display='none';render();go('sim');}
+  toast(`${d.length} rows · ${name}`);
+}
+function go(v){document.querySelector(`.tab[data-v="${v}"]`).click();}
+const drop=$('drop');
+['dragover','dragenter'].forEach(e=>document.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+document.addEventListener('dragleave',()=>drop.classList.remove('over'));
+document.addEventListener('drop',ev=>{ev.preventDefault();drop.classList.remove('over');onFiles(ev.dataTransfer.files)});
+drop.onclick=()=>$('file').click();
+
+/* served mode: auto-list data/ */
+async function pollRuns(manual){
+  try{
+    const r=await fetch('/api/runs',{cache:'no-store'});if(!r.ok)throw 0;
+    const files=await r.json();served=true;$('srcDot').classList.add('live');$('srcTxt').textContent='serve.py · live';
+    const csvs=files.filter(f=>f.name.endsWith('.csv')&&!f.name.startsWith('_'));
+    $('runsInfo').textContent=`${csvs.length} csv · ${files.length-csvs.length} log`;
+    $('runs').innerHTML=files.filter(f=>!f.name.startsWith('_')).map(f=>`<div class="run ${f.name===currentRun?'on':''}" onclick="openRun('${f.name}')">
+      <span class="k ${f.name.endsWith('.csv')?'csv':''}">${f.name.split('.').pop().toUpperCase()}</span><span class="nm">${f.name}</span><span class="t">${new Date(f.mtime*1000).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('');
+    const first=csvs.find(f=>f.size>200)||csvs[0];   // newest run that has rows
+    if(!currentRun&&first)openRun(first.name);
+    else if(currentRun&&!manual)openRun(currentRun,true);   // refresh the live one
+  }catch(e){ if(manual)toast('serve.py is not running'); }
+}
+async function openRun(name,quiet){
+  const r=await fetch('/data/'+name,{cache:'no-store'});const t=await r.text();
+  if(quiet){ if(name.endsWith('.csv')){const d=parseCSV(t);if(d.length!==rows.length){rows=d;render();}} return; }
+  ingest(name,t);
+  const log=name.replace(/\.csv$/,'.log');
+  if(name.endsWith('.csv')){fetch('/data/'+log).then(x=>x.ok?x.text():'').then(x=>{if(x){logLines=x.split('\n');$('logName').textContent=log;renderLog();}});go('sim');}
+  pollRuns();
+}
+pollRuns();setInterval(()=>served&&pollRuns(),6000);
+
+/* render sim */
+const COLS=[
+  ['passed','Checks',v=>`<span class="chip ${+v>=6?'ok':+v>=4?'mid':'bad'}">${v}/7</span>`],
+  ['sharpe','Sharpe',v=>`<span class="${+v>=1.25?'g':+v>0?'':'r'}" style="font-weight:600">${n2(v)}</span>`],
+  ['fitness','Fitness',v=>n2(v)],
+  ['turnover','Turnover',v=>n2(v,1)+'%'],
+  ['subsharpe','Sub-Sharpe',v=>n2(v)],
+  ['weight','Weight',v=>`<span class="chip ${v==='PASS'?'ok':v==='FAIL'?'bad':'na'}">${v||'—'}</span>`],
+  ['neutralization','Neutral',v=>v],
+  ['decay','Decay',v=>v],
+  ['universe','Universe',v=>v],
+  ['link','',v=>/^http/.test(v)?`<a href="${v}" target="_blank">Open ↗</a>`:`<span class="chip bad" title="${v}">error</span>`],
+  ['code','Expression',v=>v],
+];
+function render(){
+  const q=$('q').value.toLowerCase(),fn=$('fNeut').value,fp=$('fPass').value;
+  view=rows.filter(r=>(!q||(r.code||'').toLowerCase().includes(q))&&(!fn||r.neutralization===fn)&&(!fp||(fp==='pass'?+r.passed>=6:+r.passed<6)));
+  if(sortK)view.sort((a,b)=>{const x=isNaN(+a[sortK])?a[sortK]:+a[sortK],y=isNaN(+b[sortK])?b[sortK]:+b[sortK];return (x>y?1:x<y?-1:0)*sortD});
+  const th=$('tbl').tHead,tb=$('tbl').tBodies[0];
+  th.innerHTML='<tr>'+COLS.map(([k,l])=>`<th onclick="sortBy('${k}')">${l}${sortK===k?(sortD>0?' ↑':' ↓'):''}</th>`).join('')+'</tr>';
+  tb.innerHTML=view.map(r=>'<tr>'+COLS.map(([k,,f])=>k==='code'?`<td class="code" onclick='detail(${JSON.stringify(r).replace(/'/g,'&#39;')})' title="${(r.code||'').replace(/"/g,'&quot;')}">${r.code||''}</td>`:`<td>${f(r[k]??'')}</td>`).join('')+'</tr>').join('');
+  $('tblInfo').textContent=`${view.length} of ${rows.length}`;
+  stats();book();chart();
+}
+function sortBy(k){sortD=sortK===k?-sortD:-1;sortK=k;render();}
+function stats(){
+  const ok=rows.filter(r=>+r.sharpe!==0);
+  const avg=k=>ok.length?ok.reduce((a,r)=>a+(+r[k]||0),0)/ok.length:NaN;
+  const best=ok.length?ok.reduce((a,r)=>+r.sharpe>+a.sharpe?r:a):null;
+  $('kTotal').textContent=rows.length;$('kPass').textContent=rows.filter(r=>+r.passed>=6).length;
+  $('kSharpe').textContent=n2(avg('sharpe'));$('kFit').textContent=n2(avg('fitness'));$('kTurn').textContent=n2(avg('turnover'),1)+(ok.length?'%':'');
+  $('bigSharpe').textContent=best?n2(best.sharpe):'—';$('bigSharpe').className='big '+(best?(+best.sharpe>=1.25?'g':+best.sharpe<0?'r':''):'');
+  $('bigSub').textContent=best?`Best Sharpe · fitness ${n2(best.fitness)} · ${best.neutralization}`:'Best Sharpe this run';
+}
+function book(){
+  const top=[...rows].filter(r=>+r.sharpe!==0).sort((a,b)=>+b.sharpe-+a.sharpe).slice(0,14);
+  if(!top.length){$('book').innerHTML='<div class="empty">Nothing yet</div>';return;}
+  const mx=Math.max(...top.map(r=>Math.abs(+r.sharpe)))||1;
+  $('book').innerHTML=top.map((r,i)=>`<div class="row" onclick='detail(${JSON.stringify(r).replace(/'/g,'&#39;')})'><div class="bar ${+r.sharpe<0?'neg':''}" style="width:${Math.abs(+r.sharpe)/mx*100}%"></div>
+    <span class="n">${i+1}</span><span class="c">${r.code}</span><span class="s ${+r.sharpe>=1.25?'g':+r.sharpe<0?'r':''}">${n2(r.sharpe)}</span><span class="f">${n2(r.fitness)}</span></div>`).join('');
+}
+function chart(){
+  const c=$('chart'),ctx=c.getContext('2d');const W=c.clientWidth||800,H=190;c.width=W*devicePixelRatio;c.height=H*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);
+  ctx.clearRect(0,0,W,H);$('chartN').textContent=rows.length;
+  const d=rows.filter(r=>+r.sharpe!==0);if(!d.length){ctx.fillStyle='#5e6673';ctx.font='14px '+getComputedStyle(document.body).fontFamily;ctx.fillText('Load a run to chart it',16,H/2);return;}
+  const pad={l:44,r:10,t:10,b:22},w=W-pad.l-pad.r,h=H-pad.t-pad.b;
+  const vals=d.map(r=>+r.sharpe),fit=d.map(r=>+r.fitness);
+  const mx=Math.max(1.5,...vals,...fit),mn=Math.min(0,...vals,...fit);const y=v=>pad.t+(mx-v)/(mx-mn)*h;
+  ctx.strokeStyle='#2b3139';ctx.lineWidth=1;ctx.fillStyle='#848e9c';ctx.font='11px '+getComputedStyle(document.body).getPropertyValue('--num');
+  [mn,0,1.25,mx].forEach(v=>{ctx.beginPath();ctx.moveTo(pad.l,y(v));ctx.lineTo(W-pad.r,y(v));ctx.stroke();ctx.fillText(v.toFixed(2),4,y(v)+4)});
+  ctx.setLineDash([4,4]);ctx.strokeStyle='#0ecb8166';ctx.beginPath();ctx.moveTo(pad.l,y(1.25));ctx.lineTo(W-pad.r,y(1.25));ctx.stroke();ctx.setLineDash([]);
+  const bw=Math.max(3,Math.min(26,w/d.length*0.6)),step=w/d.length;
+  d.forEach((r,i)=>{const x=pad.l+i*step+(step-bw)/2,v=+r.sharpe;ctx.fillStyle=v>=1.25?'#0ecb81':v>=0?'#0ecb8177':'#f6465d';ctx.fillRect(x,Math.min(y(v),y(0)),bw,Math.abs(y(v)-y(0))||1);});
+  ctx.strokeStyle='#fcd535';ctx.lineWidth=1.5;ctx.beginPath();d.forEach((r,i)=>{const x=pad.l+i*step+step/2;i?ctx.lineTo(x,y(+r.fitness)):ctx.moveTo(x,y(+r.fitness))});ctx.stroke();
+}
+window.addEventListener('resize',chart);
+
+/* scrape */
+function renderScrape(){
+  const C=[['passed','Checks'],['max_corr','Max corr'],['after','Score'],['neutralization','Neutral'],['decay','Decay'],['universe','Universe'],['link','']];
+  const t=$('stbl');$('sEmpty').style.display=scrape.length?'none':'';
+  t.tHead.innerHTML='<tr>'+C.map(([,l])=>`<th>${l}</th>`).join('')+'<th>Expression</th></tr>';
+  t.tBodies[0].innerHTML=scrape.map(r=>'<tr>'+C.map(([k])=>`<td>${k==='link'?`<a href="${r[k]}" target="_blank">Open ↗</a>`:k==='passed'?`<span class="chip ok">${r[k]}/7</span>`:k==='max_corr'?`<span class="${+r[k]>0.7?'r':'g'}">${n2(r[k])}</span>`:r[k]??''}</td>`).join('')+`<td class="code" onclick='detail(${JSON.stringify({...r,code:r.alpha}).replace(/'/g,'&#39;')})'>${r.alpha}</td></tr>`).join('');
+}
+
+/* logs */
+function cls(m){return /DONE|Success|Logged in|written/i.test(m)?'ok':/fail|error|rejected|crash|Issue/i.test(m)?'err':/expired|retry|\d+%/.test(m)?'warn':''}
+function renderLog(){
+  const q=$('lq').value.toLowerCase(),el=$('log');
+  el.innerHTML=logLines.filter(l=>l&&(!q||l.toLowerCase().includes(q))).map(l=>{const m=l.match(/^(\S+ \S+?):\s(?:\[(w\d+)\]\s|ThreadPoolExecutor-\d+_(\d+)\s--\s)?(.*)$/);
+    return m?`<div class="ll"><span class="ts">${m[1].slice(11,19)}</span><span class="w">${m[2]||(m[3]?'w'+m[3]:'')}</span><span class="m ${cls(m[4])}">${m[4]}</span></div>`:`<div class="ll"><span class="m">${l}</span></div>`}).join('');
+  if(follow)el.scrollTop=el.scrollHeight;
+}
+function toggleFollow(){follow=!follow;$('follow').textContent=follow?'Following':'Paused';}
+
+/* detail */
+function detail(r){
+  $('mTitle').firstChild.textContent=r.link&&/^http/.test(r.link)?'Alpha '+r.link.split('/').pop():'Alpha';
+  $('mExpr').textContent=r.code||r.alpha||'';
+  const keys=['sharpe','fitness','turnover','passed','subsharpe','weight','max_corr','after','neutralization','decay','truncation','universe','region','delay'];
+  $('mKv').innerHTML=keys.filter(k=>r[k]!==undefined&&r[k]!=='').map(k=>`<div><div class="l">${k}</div><div class="v">${r[k]}</div></div>`).join('');
+  $('mLink').style.display=/^http/.test(r.link||'')?'':'none';$('mLink').href=r.link||'#';$('ov').classList.add('on');
+}
+document.addEventListener('keydown',e=>e.key==='Escape'&&$('ov').classList.remove('on'));
+
+/* misc */
+function copy(t){navigator.clipboard.writeText(t).then(()=>toast('Copied'))}
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800)}
+function clearAll(){rows=[];currentRun='';$('runName').textContent='No run loaded';$('dropWrap').style.display='';render();}
+function exportCSV(){if(!view.length)return toast('Nothing to export');const k=Object.keys(view[0]);const csv=[k.join(','),...view.map(r=>k.map(x=>`"${(r[x]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wqbrain_export.csv';a.click();}
+
+/* library */
+// Public template library. No account-specific alpha records are bundled.
+const RESEARCH=[
+ ['Momentum example','rank(ts_mean(returns, 20))','Example only · validate available fields'],
+ ['Reversal example','rank(-ts_delta(close, 5))','Example only · validate settings'],
+ ['Volume example','rank(volume / adv20)','Example only · validate settings'],
+];
+$('lib').innerHTML=RESEARCH.map(([t,c,s],i)=>`<div class="alpha"><div class="top"><b>${t}</b><span class="tag">Example ${i+1}</span></div><div class="expr">${c}</div><div class="set"><b>${s}</b></div><button class="btn sm" onclick="copy(${JSON.stringify(c)})">Copy</button></div>`).join('');
+render();
+</script>
+</body>
+</html>

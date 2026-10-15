@@ -1,0 +1,14 @@
+# Local credentials and account-generated results
+credentials.json
+.env
+.env.*
+!.env.example
+data/*
+!data/.gitkeep
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store

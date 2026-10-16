@@ -6,7 +6,9 @@ This public repository contains **no credentials, simulation history, logs, acco
 
 ## Demo
 
-[Watch the recorded walkthrough](docs/demo-simulation.mp4)
+![Alpha research dashboard demonstration](assets/demo.gif)
+
+[Watch the full recorded walkthrough](docs/demo-simulation.mp4)
 
 > The video is a phone recording, so some details may be difficult to read. The actual application is the HTML dashboard (`dashboard.html`).
 
@@ -70,7 +72,8 @@ This writes account-specific results to the locally ignored `data/` directory. D
 | `scrape_alphas.py` | Optional passing-alpha review |
 | `credentials.example.json` | Safe credential placeholder |
 | `data/` | Private local results, git-ignored |
-| `docs/demo-simulation.mp4` | Recorded project demo |
+| `assets/demo.gif` | Short looping dashboard demonstration |
+| `docs/demo-simulation.mp4` | Full recorded project demo |
 
 ## Privacy and limitations
 
